@@ -1,0 +1,24 @@
+log:
+  level: trace
+  leak_sensitive_values: true
+  format: text
+
+dsn: memory
+urls:
+  self:
+    issuer: http://localhost:9000/
+    public: http://localhost:9000/
+
+  login: http://localhost:8081/users/login
+  
+  consent: http://localhost:8081/users/consent
+
+strategies:  
+  access_token: jwt
+
+oauth2:
+  expose_internal_errors: true
+
+secrets:
+  system:
+    - SUPERSYSTEMSECRET

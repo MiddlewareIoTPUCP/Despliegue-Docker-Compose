@@ -1,0 +1,28 @@
+server:
+  port: 8081
+logging:
+  level:
+    org.springframework.cloud.gateway: TRACE
+---
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      routes:
+      - id: register-device
+        uri: http://registro-dispositivos:8000
+        predicates:
+          - Path=/register-device/**
+        filters:
+          - StripPrefix=1
+      - id: register-data
+        uri: http://registro-datos:8001
+        predicates:
+          - Path=/register-data/**
+        filters:
+          - StripPrefix=1
+      - id: users
+        uri: http://usuarios:8080
+        predicates:
+          - Path=/users/**

@@ -1,0 +1,106 @@
+version: "3"
+services:
+  rabbit:
+    image: rabbitmq:3.8.5-management-alpine
+    ports:
+      - 5672:5672
+      - 15672:15672
+    env_file:
+      - ./rabbit/configuration.env
+    networks:
+      - middlewareiot
+  
+  influx:
+    image: influxdb:1.8-alpine
+    env_file:
+      - ./influx/configuration.env
+    volumes:
+      - influx:/var/lib/influxdb
+    networks:
+      - middlewareiot
+  
+  mongo:
+    image: mongo:4.2.8
+    env_file:
+      - ./mongo/configuration.env
+    volumes:
+      - mongodata:/data/db
+      - mongoconfig:/data/configdb
+      - ./mongo/restoreDatabase.sh:/docker-entrypoint-initdb.d/restoreDatabase.sh:ro
+      - ./mongo/dump:/dump:ro
+    networks:
+      - middlewareiot
+
+  conector-http:
+    image: middlewareiotpucp/conector-http:v0.1
+    env_file: 
+      - ./conector-http/configuration.env
+    depends_on: 
+      - rabbit
+    ports:
+      - 6000:6000
+    networks:
+      - middlewareiot
+  
+  registro-dispositivos:
+    image: middlewareiotpucp/registro-dispositivos:v0.1
+    env_file:
+      - ./registro-dispositivos/configuration.env
+    volumes:
+      - ./registro-dispositivos/prestart.sh:/app/prestart.sh:ro
+    depends_on:
+      - rabbit
+      - mongo
+    networks:
+      - middlewareiot
+
+  registro-datos:
+    image: middlewareiotpucp/registro-datos:v0.1
+    env_file:
+      - ./registro-datos/configuration.env
+    volumes:
+      - ./registro-datos/prestart.sh:/app/prestart.sh:ro
+    depends_on:
+      - rabbit
+      - influx
+    networks: 
+      - middlewareiot
+
+  hydra:
+    image: oryd/hydra:v1.6
+    env_file:
+      - ./hydra/configuration.env
+    ports:
+      - 9000:4444
+      - 9001:4445
+    volumes:
+      - ./hydra/.hydra.yml:/.hydra.yml
+    networks:
+      - middlewareiot
+    command: ["serve", "all", "--dangerous-force-http"]
+
+  usuarios:
+    image: middlewareiotpucp/usuarios:v0.1
+    volumes: 
+      - ./usuarios/application.properties:/app/application.properties:ro
+    depends_on:
+      - mongo
+    networks:
+      - middlewareiot
+
+  gateway:
+    image: middlewareiotpucp/gateway:v0.1
+    volumes: 
+      - ./gateway/application.yml:/app/application.yml:ro
+    ports:
+      - 8081:8081
+    networks:
+      - middlewareiot
+  
+volumes:
+  mongodata:
+  mongoconfig:
+  influx:
+
+networks:
+  middlewareiot:
