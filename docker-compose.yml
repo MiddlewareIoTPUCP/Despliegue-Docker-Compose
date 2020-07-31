@@ -1,4 +1,4 @@
-version: "3"
+version: "3.5"
 services:
   rabbit:
     image: rabbitmq:3.8.5-management-alpine
